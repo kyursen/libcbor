@@ -23,6 +23,7 @@ if(BIG_ENDIAN)
     add_definitions(-DIS_BIG_ENDIAN)
 endif()
 
+option(CBOR_AMALGAMATION "Produce a single source amalgamation" OFF)
 option(CBOR_CUSTOM_ALLOC "Custom, dynamically defined allocator support" OFF)
 option(CBOR_PRETTY_PRINTER "Include a pretty-printing routine" ON)
 set(CBOR_BUFFER_GROWTH "2" CACHE STRING "Factor for buffer growth & shrinking")
@@ -78,6 +79,8 @@ endif()
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g")
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto")
 
+include_directories(src)
+include_directories(${PROJECT_BINARY_DIR})
 
 include(CheckTypeSize)
 check_type_size("size_t" SIZEOF_SIZE_T)
@@ -97,8 +100,6 @@ add_custom_target(coverage
                   COMMAND lcov --capture --directory . --output-file coverage.info
                   COMMAND genhtml coverage.info --highlight --legend --output-directory coverage_html
                   COMMAND echo "Coverage report ready: file://${CMAKE_CURRENT_BINARY_DIR}/coverage_html/index.html")
-include_directories(src)
-
 
 option(COVERAGE "Enable code coverage instrumentation" OFF)
 if (COVERAGE)
@@ -110,15 +111,6 @@ if (COVERAGE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fprofile-arcs -ftest-coverage --coverage")
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -g -fprofile-arcs -ftest-coverage --coverage")
 endif (COVERAGE)
-
-
-# We want to generate configuration.h from the template and make it so that it is accessible using the same
-# path during both library build and installed header use, without littering the source dir.
-# Using cbor/configuration.h in the build dir works b/c headers will be installed to <prefix>/cbor
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/cbor/configuration.h.in ${PROJECT_BINARY_DIR}/cbor/configuration.h)
-install(FILES ${PROJECT_BINARY_DIR}/cbor/configuration.h DESTINATION include/cbor)
-# Make the header visible at compile time
-include_directories(${PROJECT_BINARY_DIR})
 
 subdirs(src)
 
